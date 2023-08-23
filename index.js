@@ -1,6 +1,6 @@
 const TELEGRAM_API = require('node-telegram-bot-api');
 
-const TOKEN = '6651089420:AAFh4-O3iLM7PdxjP8dE75P9OB5gLJkkA9g';
+const TOKEN = '6618117995:AAGUnbGjAxQlQB09XR0bqkUcyPEDR_RW3VU';
 
 const BOT = new TELEGRAM_API(TOKEN, {polling: true});
 
@@ -37,11 +37,11 @@ const CUSTOM_COMMANDS = [
   { prefix: '/delete_circus_keywords', action: deleteCircusKeywords },
 ];
 
-const CURSED_USERS = {};
-
 const WORD_COUNT_FILE_NAME = 'wordCountByUser.txt';
 
 const CIRCUS_KEYWORDS_FILE_NAME = 'circusKeywords.json';
+
+const CURSED_USER_FILE_NAME = 'cursedUsers.json';
 
 let circusKeywords = [];
 let wordCountByUser = {};
@@ -51,6 +51,7 @@ let messageText;
 let msg;
 let chatUserId;
 let allUserInChat = [];
+let cursedUsers = {};
 
 BOT.setMyCommands([
     {command:'/start', description: "старт бота"},
@@ -69,6 +70,8 @@ BOT.setMyCommands([
 wordCountByUser = tryToLoadFile(WORD_COUNT_FILE_NAME, {});
 
 circusKeywords = tryToLoadFile(CIRCUS_KEYWORDS_FILE_NAME, DEFAULT_KEYWORDS);
+
+cursedUsers = tryToLoadFile(CURSED_USER_FILE_NAME,{})
 
 BOT.on('message', async messageInfo=>{
 
@@ -101,7 +104,7 @@ BOT.on('message', async messageInfo=>{
         }
       }
       
-      if (CURSED_USERS['@' + msg.from.username]) {
+      if (cursedUsers['@' + msg.from.username]) {
         await BOT.sendMessage(chatId, `@${msg.from.username} is a clown.`);
       }
 
@@ -197,36 +200,50 @@ async function clownTest()
 
 async function clownBlessing()
 {
-  if (CURSED_USERS['@'+msg.from.username]) {
-    delete CURSED_USERS['@'+msg.from.username];
+  if (cursedUsers['@'+msg.from.username]) {
+    delete cursedUsers['@'+msg.from.username];
     await BOT.sendMessage(chatId, `@${msg.from.username} has been blessed and is no longer a clown.`);
   } else {
     await BOT.sendMessage(chatId, `You are not currently cursed as a clown.`);
   }
+  saveFile(CURSED_USER_FILE_NAME,cursedUsers);
 }
 
 async function clownCurse()
 {
   const cursedUser = messageText.split(' ')[1];
-  CURSED_USERS[cursedUser] = true;
+
+  if(cursedUsers[cursedUser])
+  {
+    await BOT.sendMessage(chatId, `${cursedUser} already cursed`);
+    return;
+  }
+
+  cursedUsers[cursedUser] = true;
   await BOT.sendMessage(chatId, `${cursedUser} has been cursed as a clown.`);
+  saveFile(CURSED_USER_FILE_NAME,cursedUsers);
 }
 
 async function addCustomCircusKeywords()
 {
   let toDelete = messageText.includes('/add_custom_circus_keywords ') ? '/add_custom_circus_keywords ' : '/add_custom_circus_keywords@bad_clown_bot ';
   let customKeywords = messageText.replace(toDelete, '').split(' ');
+  let output = "";
 
   const newKeywords = customKeywords.filter(keyword => !circusKeywords.includes(keyword));
   
+  console.log("sadasd")
+
   if (newKeywords.length > 0) {
     circusKeywords.push(...newKeywords);
-    await BOT.sendMessage(chatId, "✅ Added custom circus keywords:\n" + newKeywords.join(', '));
+    await BOT.sendMessage(chatId,"✅ Added custom circus keywords:\n" + newKeywords.join(', '));
     saveFile(CIRCUS_KEYWORDS_FILE_NAME, circusKeywords);
     return;
   } else {
-    await BOT.sendMessage(chatId, "🚫 some keywords already exist in the list.");
+    await BOT.sendMessage(chatId,"🚫 some keywords already exist in the list.");
   }
+
+  await BOT.sendMessage(chatId,output);
 }
 
 async function showCircusKeywords()
@@ -313,7 +330,3 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-//to keep server alive (it turn off due to inactivity every 10 min)
-setInterval(function() {
-  console.log("live");
-}, 3000);
