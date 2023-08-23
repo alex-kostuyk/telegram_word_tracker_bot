@@ -1,6 +1,6 @@
 const TELEGRAM_API = require('node-telegram-bot-api');
 
-const TOKEN = '6618117995:AAGUnbGjAxQlQB09XR0bqkUcyPEDR_RW3VU';
+const TOKEN = '6651089420:AAFh4-O3iLM7PdxjP8dE75P9OB5gLJkkA9g';
 
 const BOT = new TELEGRAM_API(TOKEN, {polling: true});
 
