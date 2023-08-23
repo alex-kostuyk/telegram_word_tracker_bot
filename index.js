@@ -81,6 +81,9 @@ BOT.on('message', async messageInfo=>{
     messageText = msg.text;
     chatUserId = userId+"chatid"+chatId;
 
+    if(messageText==null)
+    return;
+
   
     for (const key in wordCountByUser) {
         if (key.includes(chatId)) {
